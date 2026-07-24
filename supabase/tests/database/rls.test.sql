@@ -1,7 +1,25 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select extensions.plan(16);
+select extensions.plan(18);
+
+-- Defense-in-depth grants: PUBLIC is represented by grantee OID 0 in ACLs.
+select extensions.results_eq(
+  $$ select count(*)
+     from pg_class as c
+     cross join lateral aclexplode(coalesce(c.relacl, acldefault('r', c.relowner))) as acl
+     where c.oid = 'public.habits'::regclass and acl.grantee = 0 $$,
+  array[0::bigint],
+  'the PostgreSQL PUBLIC role has no privileges on habits'
+);
+select extensions.results_eq(
+  $$ select count(*)
+     from pg_class as c
+     cross join lateral aclexplode(coalesce(c.relacl, acldefault('r', c.relowner))) as acl
+     where c.oid = 'public.habit_events'::regclass and acl.grantee = 0 $$,
+  array[0::bigint],
+  'the PostgreSQL PUBLIC role has no privileges on habit events'
+);
 
 -- Fixed UUIDs keep the fixtures deterministic. The transaction is rolled back.
 insert into auth.users (id, email)
