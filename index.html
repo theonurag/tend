@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#173f35" />
     <meta name="description" content="A calm 90-day habit tracker." />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src 'none'; media-src 'none'; worker-src 'none'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://ekvlyonpvzyhlunexrwa.supabase.co; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src 'none'; media-src 'none'; worker-src 'none'" />
     <meta name="referrer" content="no-referrer" />
-    <script src="theme.js?v=1"></script>
+    <script src="%BASE_URL%theme.js?v=1"></script>
     <title>Tend — 90-day habit practice</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23173f35'/%3E%3Cpath d='M32 48V26m0 9c-9 0-15-5-15-14 9 0 15 5 15 14Zm0-4c9 0 15-5 15-14-9 0-15 5-15 14Z' fill='none' stroke='%23d9efab' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
     <link rel="stylesheet" href="styles.css?v=10" />
@@ -18,12 +18,23 @@
       <a class="brand" href="./" aria-label="Tend home"><span aria-hidden="true">♧</span> Tend</a>
       <div class="header-actions">
         <a class="nav-link" href="guide.html">How it works</a>
+        <span class="account-label" id="accountLabel"></span>
+        <button class="header-button" id="authButton" type="button" data-signed-in="false">Sign in</button>
         <button class="theme-button" id="themeToggle" type="button" aria-label="Switch theme" aria-pressed="false"><span aria-hidden="true">☾</span><span class="theme-label">Dark</span></button>
-        <button class="header-button" id="resetData" type="button">Reset</button>
+        <button class="header-button" id="resetData" type="button" hidden>Reset</button>
       </div>
     </header>
 
     <main id="habitTracker" class="tracker-shell">
+      <section class="auth-gate" id="authGate" aria-labelledby="authGateTitle">
+        <span aria-hidden="true">♧</span>
+        <p class="eyebrow">Private by design</p>
+        <h1 id="authGateTitle">Your habits belong to you.</h1>
+        <p>Sign in with a secure email link to keep your 90-day practices synchronized across devices.</p>
+        <button class="primary-button" type="button" data-open-auth>Sign in to Tend</button>
+      </section>
+
+      <div id="trackerContent" hidden>
       <section class="tracker-heading" aria-labelledby="pageTitle">
         <div>
           <p class="eyebrow">Your 90-day practice</p>
@@ -54,8 +65,19 @@
           </div>
         </div>
       </section>
-      <p class="tracker-note">Progress is evidence, not a demand for perfection. Missed days stay quiet; the next day remains available.</p>
+      <p class="tracker-note"><span id="syncStatus" role="status">Syncing…</span> Progress is evidence, not a demand for perfection. Missed days stay quiet; the next day remains available.</p>
+      </div>
     </main>
+
+    <dialog id="authDialog" aria-labelledby="authDialogTitle">
+      <form id="authForm" method="dialog">
+        <div class="dialog-header"><div><p class="eyebrow">Private synchronization</p><h2 id="authDialogTitle">Sign in to Tend</h2></div><button class="close-button" value="cancel" formnovalidate aria-label="Close">×</button></div>
+        <p class="dialog-intro">We’ll email you a one-time secure link. No password required.</p>
+        <label class="field"><span>Email address</span><input name="email" type="email" autocomplete="email" inputmode="email" required maxlength="254" placeholder="you@example.com" /></label>
+        <p class="privacy-note">Your email is used only for authentication. Habit data is private to your account.</p>
+        <div class="dialog-actions"><button class="secondary-button" value="cancel" formnovalidate>Cancel</button><button class="primary-button" type="submit">Email me a sign-in link</button></div>
+      </form>
+    </dialog>
 
     <dialog id="habitDialog" aria-labelledby="habitDialogTitle">
       <form id="habitForm" method="dialog">
