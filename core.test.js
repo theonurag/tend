@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { dateKey, gardenStage, habitPhase, journeyDate, journeyDay, latestAutomaticity, practiceSummary, recoveryCount, successfulDates, totalGrowth } from "./core.js";
+import { calendarDayOffset, dateKey, gardenStage, groupHabitsByDuration, habitPhase, isJourneyActive, journeyDate, journeyDay, latestAutomaticity, normalizeJourneyLength, practiceSummary, recoveryCount, successfulDates, totalGrowth } from "./core.js";
 
 const localDate = (year, month, day) => new Date(year, month - 1, day, 12);
 const event = (outcome, reflection = "") => ({ outcome, reflection });
@@ -9,13 +9,48 @@ test("dateKey emits a stable local calendar date", () => {
   assert.equal(dateKey(localDate(2026, 7, 20)), "2026-07-20");
 });
 
-test("90-day journeys map day numbers to local dates", () => {
+test("journeys map day numbers to local dates", () => {
   const start = localDate(2026, 7, 20);
   assert.equal(dateKey(journeyDate(start, 1)), "2026-07-20");
   assert.equal(dateKey(journeyDate(start, 10)), "2026-07-29");
   assert.equal(journeyDay(start, localDate(2026, 7, 20)), 1);
   assert.equal(journeyDay(start, localDate(2026, 7, 29)), 10);
   assert.equal(journeyDay(start, localDate(2027, 1, 1)), 91);
+});
+
+test("calendar offsets align journey days", () => {
+  const start = localDate(2026, 7, 20);
+  assert.equal(calendarDayOffset(start, localDate(2026, 7, 19)), -1);
+  assert.equal(calendarDayOffset(start, localDate(2026, 7, 20)), 0);
+  assert.equal(calendarDayOffset(start, localDate(2026, 7, 27)), 7);
+});
+
+test("journeys are active only from their start through their final day", () => {
+  const start = localDate(2026, 7, 20);
+  assert.equal(isJourneyActive(start, localDate(2026, 7, 19), 7), false);
+  assert.equal(isJourneyActive(start, localDate(2026, 7, 20), 7), true);
+  assert.equal(isJourneyActive(start, localDate(2026, 7, 26), 7), true);
+  assert.equal(isJourneyActive(start, localDate(2026, 7, 27), 7), false);
+});
+
+test("habits group by normalized practice length in ascending order", () => {
+  const habits = [
+    { id: "a", durationDays: 14 },
+    { id: "b", durationDays: 7 },
+    { id: "c", durationDays: "14" }
+  ];
+  assert.deepEqual(groupHabitsByDuration(habits), [
+    { durationDays: 7, habits: [habits[1]] },
+    { durationDays: 14, habits: [habits[0], habits[2]] }
+  ]);
+});
+
+test("journey lengths accept user-defined whole days within safe bounds", () => {
+  assert.equal(normalizeJourneyLength(30), 30);
+  assert.equal(normalizeJourneyLength("120"), 120);
+  assert.equal(normalizeJourneyLength(0), 1);
+  assert.equal(normalizeJourneyLength(5000), 3650);
+  assert.equal(normalizeJourneyLength("not a number"), 90);
 });
 
 test("successful dates are unique and only include achieved habits", () => {

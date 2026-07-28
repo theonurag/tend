@@ -4,19 +4,24 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#173f35" />
-    <meta name="description" content="A calm 90-day habit tracker." />
+    <meta name="description" content="A calm, flexible practice tracker." />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://ekvlyonpvzyhlunexrwa.supabase.co; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src 'none'; media-src 'none'; worker-src 'none'" />
     <meta name="referrer" content="no-referrer" />
-    <script src="%BASE_URL%theme.js?v=1"></script>
-    <title>Tend — 90-day habit practice</title>
+    <script src="theme.js?v=2"></script>
+    <title>Tend — daily practice</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23173f35'/%3E%3Cpath d='M32 48V26m0 9c-9 0-15-5-15-14 9 0 15 5 15 14Zm0-4c9 0 15-5 15-14-9 0-15 5-15 14Z' fill='none' stroke='%23d9efab' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
-    <link rel="stylesheet" href="styles.css?v=10" />
+    <link rel="stylesheet" href="styles.css?v=19" />
   </head>
   <body>
     <a class="skip-link" href="#habitTracker">Skip to habit tracker</a>
     <header class="app-header">
       <a class="brand" href="./" aria-label="Tend home"><span aria-hidden="true">♧</span> Tend</a>
+      <div class="header-practice" aria-live="polite">
+        <strong>Keep showing up.</strong>
+        <span id="todaySummary">One small check at a time.</span>
+      </div>
       <div class="header-actions">
+        <button class="header-add-button" type="button" data-open="habit"><span aria-hidden="true">＋</span> New practice</button>
         <a class="nav-link" href="guide.html">How it works</a>
         <span class="account-label" id="accountLabel"></span>
         <button class="header-button" id="authButton" type="button" data-signed-in="false">Sign in</button>
@@ -29,39 +34,20 @@
       <section class="auth-gate" id="authGate" aria-labelledby="authGateTitle">
         <span aria-hidden="true">♧</span>
         <p class="eyebrow">Private by design</p>
-        <h1 id="authGateTitle">Your habits belong to you.</h1>
-        <p>Sign in with a secure email link to keep your 90-day practices synchronized across devices.</p>
+        <h1 id="authGateTitle">Your practices belong to you.</h1>
+        <p>Sign in with a secure email link to keep your practices synchronized across devices.</p>
         <button class="primary-button" type="button" data-open-auth>Sign in to Tend</button>
       </section>
 
       <div id="trackerContent" hidden>
-      <section class="tracker-heading" aria-labelledby="pageTitle">
-        <div>
-          <p class="eyebrow">Your 90-day practice</p>
-          <h1 id="pageTitle">Keep showing up.</h1>
-          <p id="todaySummary">One small check at a time.</p>
-        </div>
-        <button class="primary-button add-habit-button" type="button" data-open="habit"><span aria-hidden="true">＋</span> New habit</button>
-      </section>
-
-      <section class="matrix-card" aria-labelledby="matrixTitle">
-        <div class="matrix-toolbar">
-          <div>
-            <h2 id="matrixTitle">Habits</h2>
-            <p>Click a day to mark it complete. Click a habit name for details.</p>
-          </div>
-          <div class="matrix-legend" aria-label="Legend"><span><i class="legend-done">✓</i> Achieved</span><span><i class="legend-today"></i> Today</span></div>
-        </div>
-        <div class="matrix-scroll" id="matrixScroll" tabindex="0" aria-label="90-day habit tracking table">
-          <table class="habit-matrix">
-            <thead id="matrixHead"></thead>
-            <tbody id="matrixBody"></tbody>
-          </table>
+      <section class="matrix-card" aria-label="Practice tracker">
+        <div class="matrix-scroll" id="matrixScroll" tabindex="0" aria-label="Grouped daily practices">
+          <div class="practice-groups" id="practiceGroups"></div>
           <div class="matrix-empty" id="matrixEmpty" hidden>
             <span aria-hidden="true">♧</span>
-            <h3>Start your first 90-day practice</h3>
-            <p>Add a habit, then return each day to mark the smallest version complete.</p>
-            <button class="primary-button" type="button" data-open="habit">Add a habit</button>
+            <h3>Start your first practice</h3>
+            <p>Add a practice, then return each day to mark the smallest version complete.</p>
+            <button class="primary-button" type="button" data-open="habit">Add a practice</button>
           </div>
         </div>
       </section>
@@ -74,39 +60,43 @@
         <div class="dialog-header"><div><p class="eyebrow">Private synchronization</p><h2 id="authDialogTitle">Sign in to Tend</h2></div><button class="close-button" value="cancel" formnovalidate aria-label="Close">×</button></div>
         <p class="dialog-intro">We’ll email you a one-time secure link. No password required.</p>
         <label class="field"><span>Email address</span><input name="email" type="email" autocomplete="email" inputmode="email" required maxlength="254" placeholder="you@example.com" /></label>
-        <p class="privacy-note">Your email is used only for authentication. Habit data is private to your account.</p>
+        <p class="privacy-note">Your email is used only for authentication. Practice data is private to your account.</p>
         <div class="dialog-actions"><button class="secondary-button" value="cancel" formnovalidate>Cancel</button><button class="primary-button" type="submit">Email me a sign-in link</button></div>
       </form>
     </dialog>
 
     <dialog id="habitDialog" aria-labelledby="habitDialogTitle">
-      <form id="habitForm" method="dialog">
-        <div class="dialog-header"><div><p class="eyebrow">Begin a 90-day practice</p><h2 id="habitDialogTitle">Add a habit</h2></div><button class="close-button" value="cancel" formnovalidate aria-label="Close">×</button></div>
+      <form id="habitForm">
+        <div class="dialog-header"><div><p class="eyebrow" id="habitDialogEyebrow">Begin a practice</p><h2 id="habitDialogTitle">Add a practice</h2></div><button class="close-button" type="button" data-close-habit aria-label="Close">×</button></div>
         <p class="dialog-intro">Define the practice once. The tracker will only ask whether you showed up.</p>
-        <label class="field"><span>Habit name</span><input name="name" required maxlength="70" placeholder="e.g. Reading" /></label>
+        <label class="field"><span>Start with a suggestion</span><select name="habitPreset" id="habitPreset"><option value="">Choose a suggestion or write your own</option><optgroup label="Physical wellbeing"><option value="walk">Take a daily walk</option><option value="exercise">Move my body</option><option value="strength">Build strength</option><option value="stretch">Stretch daily</option><option value="water">Drink more water</option><option value="vegetables">Eat more vegetables</option><option value="sleep">Keep a sleep routine</option><option value="medication">Take prescribed medication</option><option value="floss">Floss my teeth</option><option value="sunlight">Get morning daylight</option></optgroup><optgroup label="Mental wellbeing"><option value="meditate">Meditate</option><option value="breathe">Pause and breathe</option><option value="journal">Write in a journal</option><option value="gratitude">Practice gratitude</option><option value="phone">Start the day without my phone</option></optgroup><optgroup label="Growth and focus"><option value="read">Read every day</option><option value="learn">Learn something new</option><option value="focus">Do focused work</option><option value="plan">Plan tomorrow</option><option value="review">Review my day</option></optgroup><optgroup label="Life and connection"><option value="connect">Connect with someone</option><option value="tidy">Reset my space</option><option value="money">Check my spending</option><option value="outdoors">Spend time outdoors</option></optgroup></select></label>
+        <label class="field"><span>Practice name</span><input name="name" required maxlength="70" placeholder="e.g. Reading" /></label>
         <label class="field"><span>Why does this matter?</span><textarea name="why" maxlength="180" rows="2" placeholder="e.g. I want to learn and unwind without scrolling"></textarea></label>
         <label class="field"><span>When will you do it?</span><input name="cue" required maxlength="120" placeholder="e.g. When I get into bed" /></label>
         <label class="field"><span>What will you do?</span><input name="action" required maxlength="120" placeholder="e.g. Read a book on my Kindle" /></label>
         <label class="field"><span>Minimum version</span><input name="minimum" required maxlength="100" placeholder="e.g. Read one page" /></label>
-        <div class="dialog-actions"><button class="secondary-button" value="cancel" formnovalidate>Cancel</button><button class="primary-button" value="default">Start 90 days</button></div>
+        <label class="field"><span>Practice length <small>days</small></span><input name="durationDays" type="number" required min="1" max="3650" step="1" value="7" inputmode="numeric" list="practiceLengths" /></label>
+        <datalist id="practiceLengths"><option value="7"></option><option value="14"></option><option value="30"></option><option value="90"></option></datalist>
+        <p class="duration-help" id="durationHelp">Choose 7, 14, 30, 90, or enter a custom length. You can extend it later.</p>
+        <div class="dialog-actions"><button class="secondary-button" type="button" value="cancel" data-close-habit>Cancel</button><button class="primary-button" id="habitSubmit" type="submit">Start practice</button></div>
       </form>
     </dialog>
 
     <dialog id="detailDialog" aria-labelledby="detailTitle">
       <div class="habit-detail">
-        <div class="dialog-header"><div><p class="eyebrow" id="detailEyebrow">90-day practice</p><h2 id="detailTitle"></h2></div><button class="close-button" type="button" data-close-detail aria-label="Close">×</button></div>
-        <div class="detail-progress"><strong id="detailCount">0</strong><span>days achieved</span><div class="progress-track"><i id="detailProgress"></i></div><b id="detailDay">Day 1 of 90</b></div>
+        <div class="dialog-header"><div><p class="eyebrow" id="detailEyebrow">Practice</p><h2 id="detailTitle"></h2></div><button class="close-button" type="button" data-close-detail aria-label="Close">×</button></div>
+        <div class="detail-progress"><strong id="detailCount">0</strong><span>days achieved</span><div class="progress-track"><i id="detailProgress"></i></div><b id="detailDay"></b></div>
         <dl class="habit-plan">
           <div><dt>When</dt><dd id="detailCue"></dd></div>
           <div><dt>I will</dt><dd id="detailAction"></dd></div>
           <div><dt>Minimum</dt><dd id="detailMinimum"></dd></div>
           <div id="detailWhyRow"><dt>Why</dt><dd id="detailWhy"></dd></div>
         </dl>
-        <div class="detail-footer"><span id="detailStarted"></span><button class="danger-button" id="deleteHabit" type="button">Delete habit</button></div>
+        <div class="detail-footer"><span id="detailStarted"></span><div class="detail-footer-actions"><button class="secondary-button compact-button" id="editHabit" type="button">Edit practice</button><button class="danger-button" id="deleteHabit" type="button">Delete practice</button></div></div>
       </div>
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="app.js?v=10"></script>
+    <script type="module" src="app.js?v=20"></script>
   </body>
 </html>

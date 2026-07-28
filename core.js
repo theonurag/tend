@@ -9,13 +9,40 @@ export function journeyDate(start, day) {
   return date;
 }
 
-export function journeyDay(start, today = new Date(), length = 90) {
+export function calendarDayOffset(start, target) {
   const first = new Date(start);
-  const current = new Date(today);
+  const current = new Date(target);
   const firstDay = Date.UTC(first.getFullYear(), first.getMonth(), first.getDate());
   const currentDay = Date.UTC(current.getFullYear(), current.getMonth(), current.getDate());
-  const elapsed = Math.floor((currentDay - firstDay) / 86400000) + 1;
+  return Math.floor((currentDay - firstDay) / 86400000);
+}
+
+export function journeyDay(start, today = new Date(), length = 90) {
+  const elapsed = calendarDayOffset(start, today) + 1;
   return Math.max(1, Math.min(Number(length) + 1, elapsed));
+}
+
+export function isJourneyActive(start, today = new Date(), length = 90) {
+  const offset = calendarDayOffset(start, today);
+  return offset >= 0 && offset < Number(length);
+}
+
+export function groupHabitsByDuration(habits = []) {
+  const groups = new Map();
+  for (const habit of Array.isArray(habits) ? habits : []) {
+    const durationDays = normalizeJourneyLength(habit?.durationDays);
+    if (!groups.has(durationDays)) groups.set(durationDays, []);
+    groups.get(durationDays).push(habit);
+  }
+  return [...groups.entries()]
+    .sort(([first], [second]) => first - second)
+    .map(([durationDays, groupedHabits]) => ({ durationDays, habits: groupedHabits }));
+}
+
+export function normalizeJourneyLength(value, fallback = 90) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed)) return fallback;
+  return Math.max(1, Math.min(3650, parsed));
 }
 
 export function successfulDates(events = []) {

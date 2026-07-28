@@ -1,6 +1,6 @@
 # Tend
 
-An open-source, privacy-first 90-day habit tracker. Tend uses a compact spreadsheet-like matrix so many habits can be tracked together without turning the everyday screen into a dashboard.
+An open-source, privacy-first habit tracker. Tend uses a compact, full-screen spreadsheet-like matrix so many habits can be tracked together without turning the everyday screen into a dashboard.
 
 ## Run locally
 
@@ -18,8 +18,8 @@ Open <http://127.0.0.1:3000/>. Never put a `service_role`, `sb_secret_*`, databa
 ## Core model
 
 - **One row per habit:** the frozen first column opens the habit's cue, action, minimum version, reason, and progress.
-- **Ninety day columns:** each available cell is a simple achieved/not-achieved toggle; future days remain unavailable.
-- **Independent start dates:** every habit begins its own 90-day journey when it is created.
+- **Flexible practice length:** choose the initial number of days for each habit and extend it later by editing the habit.
+- **Independent start dates:** every habit begins its own journey when it is created.
 - **Quiet missed days:** unmarked days stay visually neutral and never erase previous progress.
 - **Private accounts:** passwordless Supabase Auth identifies each user. PostgreSQL Row-Level Security limits every habit and event query to its owner.
 
@@ -31,7 +31,7 @@ No legacy browser data is imported. A user begins with a fresh server-side accou
 
 ## Evidence and boundaries
 
-Ninety days is a motivating practice frame, not a scientific promise that every behavior becomes automatic on day 90. Habits form at different rates. Tend is not medical or psychological treatment.
+Any chosen duration is a motivating practice frame, not a scientific promise that a behavior becomes automatic by its final day. Habits form at different rates. Tend is not medical or psychological treatment.
 
 ## Verify
 
