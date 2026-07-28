@@ -52,6 +52,22 @@ export function successfulDates(events = []) {
     .filter(Boolean));
 }
 
+export function journeyProgress(habit = {}, today = new Date()) {
+  const length = normalizeJourneyLength(habit.durationDays);
+  const parsedStart = new Date(habit.createdAt);
+  const start = Number.isNaN(parsedStart.valueOf()) ? new Date(today) : parsedStart;
+  const completed = successfulDates(habit.events);
+  const achieved = Array.from({ length }, (_, index) => dateKey(journeyDate(start, index + 1)))
+    .filter((key) => completed.has(key)).length;
+  return {
+    achieved,
+    length,
+    rate: Math.round((achieved / length) * 100),
+    isComplete: calendarDayOffset(start, today) >= length,
+    completedAt: journeyDate(start, length)
+  };
+}
+
 export function practiceSummary(events = []) {
   const safe = Array.isArray(events) ? events : [];
   const successes = safe.filter((event) => event?.outcome === "done" || event?.outcome === "replaced").length;

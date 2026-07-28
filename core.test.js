@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { calendarDayOffset, dateKey, gardenStage, groupHabitsByDuration, habitPhase, isJourneyActive, journeyDate, journeyDay, latestAutomaticity, normalizeJourneyLength, practiceSummary, recoveryCount, successfulDates, totalGrowth } from "./core.js";
+import { calendarDayOffset, dateKey, gardenStage, groupHabitsByDuration, habitPhase, isJourneyActive, journeyDate, journeyDay, journeyProgress, latestAutomaticity, normalizeJourneyLength, practiceSummary, recoveryCount, successfulDates, totalGrowth } from "./core.js";
 
 const localDate = (year, month, day) => new Date(year, month - 1, day, 12);
 const event = (outcome, reflection = "") => ({ outcome, reflection });
@@ -59,6 +59,26 @@ test("successful dates are unique and only include achieved habits", () => {
     { date: "2026-07-20", outcome: "done" },
     { date: "2026-07-21", outcome: "missed" }
   ])], ["2026-07-20"]);
+});
+
+test("journey progress summarizes only events inside the practice window", () => {
+  const habit = {
+    createdAt: localDate(2026, 7, 20),
+    durationDays: 3,
+    events: [
+      { date: "2026-07-20", outcome: "done" },
+      { date: "2026-07-22", outcome: "done" },
+      { date: "2026-07-23", outcome: "done" }
+    ]
+  };
+  assert.deepEqual(journeyProgress(habit, localDate(2026, 7, 23)), {
+    achieved: 2,
+    length: 3,
+    rate: 67,
+    isComplete: true,
+    completedAt: localDate(2026, 7, 22)
+  });
+  assert.equal(journeyProgress(habit, localDate(2026, 7, 22)).isComplete, false);
 });
 
 test("practice summary counts healthy opportunities without streak logic", () => {

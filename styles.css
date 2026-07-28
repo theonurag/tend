@@ -348,6 +348,33 @@ html[data-theme="dark"] .close-button { background: #29332f; }
 .danger-button { padding: 9px 11px; color: #a04444; background: transparent; border: 1px solid #d9b5b5; border-radius: 7px; font-size: 11px; font-weight: 700; }
 .danger-button:hover { color: #fff; background: #a04444; border-color: #a04444; }
 
+.completion-summary { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin: 0 0 22px; padding: 18px; color: var(--ink); background: linear-gradient(135deg, #eef5df, #e2eee8); border: 1px solid #c8d9b0; border-radius: 11px; }
+.completion-mark { grid-row: 1 / span 2; display: grid; place-items: center; width: 52px; height: 52px; color: var(--forest-700); background: rgba(255,255,255,.72); border-radius: 50%; font-size: 29px; }
+.completion-summary .eyebrow { margin-bottom: 4px; }
+.completion-summary h3 { margin: 0; font: 700 21px/1.15 "Inter Variable", Inter, system-ui, sans-serif; }
+.completion-summary p:last-child { margin: 7px 0 0; color: #52635d; font-size: 12px; line-height: 1.55; }
+.completion-actions { grid-column: 2; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 13px; }
+.completion-actions .primary-button { min-height: 36px; }
+
+.growth-dialog { width: min(980px, calc(100% - 28px)); }
+.growth-dialog-shell { padding: 26px; }
+.growth-layout { display: grid; grid-template-columns: minmax(280px, 1.06fr) minmax(260px, .94fr); gap: 28px; align-items: start; }
+.growth-preview { display: grid; place-items: center; min-height: 360px; padding: 18px; background: #e6e9e2; border: 1px solid var(--line); border-radius: 12px; }
+.growth-preview canvas { display: block; width: 100%; max-height: min(62vh, 660px); object-fit: contain; box-shadow: 0 18px 45px rgba(16,47,40,.17); }
+.growth-controls .field { margin-top: 0; }
+.check-field { display: flex; align-items: center; gap: 9px; margin: 14px 0 20px; color: var(--ink); font-size: 12px; font-weight: 700; }
+.check-field input { width: 17px; height: 17px; accent-color: var(--forest-700); }
+.format-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 17px; padding: 0; border: 0; }
+.format-options legend { grid-column: 1 / -1; margin-bottom: 8px; color: var(--ink); font-size: var(--font-sm); font-weight: 700; }
+.format-options label { position: relative; cursor: pointer; }
+.format-options input { position: absolute; opacity: 0; pointer-events: none; }
+.format-options label > span { display: flex; justify-content: space-between; align-items: center; min-height: 46px; padding: 10px 12px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; font-size: 12px; font-weight: 700; }
+.format-options small { color: var(--muted); font-size: 10px; font-weight: 500; }
+.format-options input:checked + span { color: var(--forest-700); background: var(--forest-100); border-color: var(--forest-600); box-shadow: 0 0 0 1px var(--forest-600); }
+.format-options input:focus-visible + span { outline: 3px solid rgba(57, 125, 105, .28); outline-offset: 2px; }
+.growth-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 22px; }
+.growth-actions .text-button { grid-column: 1 / -1; justify-self: center; padding: 6px; }
+
 html[data-theme="dark"] .practice-group + .practice-group { border-top-color: #52665c; }
 html[data-theme="dark"] .practice-group-row { color: #e7f0eb; background: #26362f; border-bottom-color: #52665c; }
 html[data-theme="dark"] .habit-matrix thead th { background: #1c2722; }
@@ -357,6 +384,10 @@ html[data-theme="dark"] .day-cell.in-journey { background: rgba(121, 174, 151, .
 html[data-theme="dark"] .day-cell.in-journey button { background: rgba(255,255,255,.04); border-color: rgba(121,174,151,.38); }
 html[data-theme="dark"] .day-cell button:disabled { background: rgba(255,255,255,.018); border-color: rgba(121,174,151,.22); }
 html[data-theme="dark"] .day-cell.is-today { background: rgba(121, 174, 151, .15); }
+html[data-theme="dark"] .completion-summary { background: linear-gradient(135deg, #2b3b21, #263c33); border-color: #51673f; }
+html[data-theme="dark"] .completion-mark { background: rgba(255,255,255,.07); }
+html[data-theme="dark"] .completion-summary p:last-child { color: #b9c8c2; }
+html[data-theme="dark"] .growth-preview { background: #121a17; }
 
 @media (max-width: 760px) {
   .app-header { grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; padding-inline: 10px; }
@@ -372,6 +403,9 @@ html[data-theme="dark"] .day-cell.is-today { background: rgba(121, 174, 151, .15
   .habit-name-cell button { padding-inline: 12px; }
   .habit-name-cell strong { max-width: 140px; }
   .practice-group-row { padding-inline: 12px; }
+  .growth-dialog-shell { padding: 21px; }
+  .growth-layout { grid-template-columns: 1fr; gap: 22px; }
+  .growth-preview canvas { max-height: 52vh; }
 }
 
 
@@ -381,4 +415,9 @@ html[data-theme="dark"] .day-cell.is-today { background: rgba(121, 174, 151, .15
   .score-heading, .score-cell { left: 145px; }
   .habit-name-cell strong { max-width: 120px; }
   .habit-plan div { grid-template-columns: 72px 1fr; }
+  .completion-summary { grid-template-columns: 1fr; }
+  .completion-mark { grid-row: auto; }
+  .completion-actions { grid-column: 1; }
+  .growth-actions { grid-template-columns: 1fr; }
+  .growth-actions .text-button { grid-column: 1; }
 }

@@ -10,7 +10,7 @@
     <script src="theme.js?v=2"></script>
     <title>Tend — daily practice</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23173f35'/%3E%3Cpath d='M32 48V26m0 9c-9 0-15-5-15-14 9 0 15 5 15 14Zm0-4c9 0 15-5 15-14-9 0-15 5-15 14Z' fill='none' stroke='%23d9efab' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
-    <link rel="stylesheet" href="styles.css?v=19" />
+    <link rel="stylesheet" href="styles.css?v=20" />
   </head>
   <body>
     <a class="skip-link" href="#habitTracker">Skip to habit tracker</a>
@@ -86,6 +86,11 @@
       <div class="habit-detail">
         <div class="dialog-header"><div><p class="eyebrow" id="detailEyebrow">Practice</p><h2 id="detailTitle"></h2></div><button class="close-button" type="button" data-close-detail aria-label="Close">×</button></div>
         <div class="detail-progress"><strong id="detailCount">0</strong><span>days achieved</span><div class="progress-track"><i id="detailProgress"></i></div><b id="detailDay"></b></div>
+        <section class="completion-summary" id="completionSummary" aria-labelledby="completionTitle" hidden>
+          <span class="completion-mark" aria-hidden="true">♧</span>
+          <div><p class="eyebrow">Practice complete</p><h3 id="completionTitle">Something took root.</h3><p id="completionMessage"></p></div>
+          <div class="completion-actions"><button class="primary-button" id="openGrowthCard" type="button">Create growth card</button><button class="secondary-button compact-button" id="extendPractice" type="button">Keep tending</button></div>
+        </section>
         <dl class="habit-plan">
           <div><dt>When</dt><dd id="detailCue"></dd></div>
           <div><dt>I will</dt><dd id="detailAction"></dd></div>
@@ -96,7 +101,25 @@
       </div>
     </dialog>
 
+    <dialog class="growth-dialog" id="growthDialog" aria-labelledby="growthDialogTitle">
+      <div class="growth-dialog-shell">
+        <div class="dialog-header"><div><p class="eyebrow">A symbolic reward</p><h2 id="growthDialogTitle">Your growth card</h2></div><button class="close-button" type="button" data-close-growth aria-label="Close">×</button></div>
+        <p class="dialog-intro">Celebrate showing up—not perfection. Preview exactly what will be shared.</p>
+        <div class="growth-layout">
+          <div class="growth-preview"><canvas id="growthCanvas" width="1080" height="1350" role="img" aria-label="Preview of your Tend growth card">Your browser cannot preview the growth card.</canvas></div>
+          <div class="growth-controls">
+            <label class="field"><span>Card title</span><input id="growthCardName" maxlength="70" autocomplete="off" /></label>
+            <label class="check-field"><input id="showGrowthName" type="checkbox" checked /><span>Show the practice name</span></label>
+            <fieldset class="format-options"><legend>Card format</legend><label><input type="radio" name="growthFormat" value="feed" checked /><span>Feed <small>4:5</small></span></label><label><input type="radio" name="growthFormat" value="story" /><span>Story <small>9:16</small></span></label></fieldset>
+            <label class="field"><span>Share caption <small>optional and editable</small></span><textarea id="growthCaption" maxlength="400" rows="4"></textarea></label>
+            <p class="privacy-note">Only this card and caption are shared. Your email, motivation, cue, and private practice details stay private.</p>
+            <div class="growth-actions"><button class="primary-button" id="shareGrowthCard" type="button">Share card</button><button class="secondary-button" id="downloadGrowthCard" type="button">Download image</button><button class="text-button" id="copyGrowthCaption" type="button">Copy caption</button></div>
+          </div>
+        </div>
+      </div>
+    </dialog>
+
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="app.js?v=20"></script>
+    <script type="module" src="app.js?v=21"></script>
   </body>
 </html>

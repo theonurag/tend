@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { dateKey, groupHabitsByDuration, isJourneyActive, journeyDate, journeyDay, normalizeJourneyLength, successfulDates } from "./core.js";
+import { dateKey, groupHabitsByDuration, isJourneyActive, journeyDate, journeyDay, journeyProgress, normalizeJourneyLength, successfulDates } from "./core.js";
 
 const DEFAULT_INITIAL_DAYS = 7;
 const LOCAL_DEV = import.meta.env.DEV;
@@ -36,6 +36,7 @@ const $ = (selector, root = document) => root.querySelector(selector);
 const starterState = { habits: [] };
 let toastTimer;
 let activeHabitId = null;
+let growthHabitId = null;
 let session = null;
 let state = structuredClone(starterState);
 
@@ -456,13 +457,16 @@ function openDetail(id) {
   const start = parseStart(habit);
   const length = habit.durationDays;
   const currentDay = journeyDay(start, new Date(), length);
-  const completed = successfulDates(habit.events);
-  const count = Array.from({ length }, (_, index) => dateKey(journeyDate(start, index + 1))).filter((key) => completed.has(key)).length;
+  const progress = journeyProgress(habit);
   $("#detailTitle").textContent = habit.name;
-  $("#detailCount").textContent = count;
+  $("#detailCount").textContent = progress.achieved;
   $("#detailEyebrow").textContent = `${length}-day practice`;
   $("#detailDay").textContent = currentDay > length ? `${length}-day practice complete` : `Day ${Math.max(1, currentDay)} of ${length}`;
-  $("#detailProgress").style.width = `${Math.round((count / length) * 100)}%`;
+  $("#detailProgress").style.width = `${progress.rate}%`;
+  $("#completionSummary").hidden = !progress.isComplete;
+  $("#completionMessage").textContent = progress.isComplete
+    ? `You showed up ${progress.achieved} ${progress.achieved === 1 ? "time" : "times"} across this ${length}-day practice. That evidence belongs to you.`
+    : "";
   $("#detailCue").textContent = habit.cue || "At the usual cue";
   $("#detailAction").textContent = habit.action || habit.name;
   $("#detailMinimum").textContent = habit.minimum || "Practice the smallest version";
@@ -470,6 +474,270 @@ function openDetail(id) {
   $("#detailWhyRow").hidden = !habit.why;
   $("#detailStarted").textContent = `Started ${formatStart(start)}`;
   $("#detailDialog").showModal();
+}
+
+function defaultGrowthCardCaption(habit) {
+  const { achieved, length } = journeyProgress(habit);
+  const showName = $("#showGrowthName").checked;
+  const editedName = $("#growthCardName").value.trim();
+  const practice = showName ? `“${editedName || habit.name}”` : "a personal practice";
+  return `I tended ${practice} for ${length} days. I showed up ${achieved} ${achieved === 1 ? "time" : "times"}—and something took root. 🌱\n\nMade with Tend · ${window.location.origin}${window.location.pathname}`;
+}
+
+function growthCardCaption(habit) {
+  return $("#growthCaption").value.trim() || defaultGrowthCardCaption(habit);
+}
+
+function updateGrowthCardCustomization() {
+  const habit = findHabit(growthHabitId);
+  if (!habit) return;
+  $("#growthCaption").value = defaultGrowthCardCaption(habit);
+  renderGrowthCard();
+}
+
+function hashText(value = "") {
+  return [...String(value)].reduce((hash, character) => Math.imul(hash ^ character.charCodeAt(0), 16777619) >>> 0, 2166136261);
+}
+
+function roundedRect(context, x, y, width, height, radius) {
+  const safeRadius = Math.min(radius, width / 2, height / 2);
+  context.beginPath();
+  context.moveTo(x + safeRadius, y);
+  context.arcTo(x + width, y, x + width, y + height, safeRadius);
+  context.arcTo(x + width, y + height, x, y + height, safeRadius);
+  context.arcTo(x, y + height, x, y, safeRadius);
+  context.arcTo(x, y, x + width, y, safeRadius);
+  context.closePath();
+}
+
+function drawWrappedText(context, text, x, y, maxWidth, lineHeight, maxLines = 3) {
+  const words = String(text).trim().split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = "";
+  for (const word of words) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (context.measureText(candidate).width <= maxWidth || !line) line = candidate;
+    else {
+      lines.push(line);
+      line = word;
+    }
+  }
+  if (line) lines.push(line);
+  const visible = lines.slice(0, maxLines);
+  if (lines.length > maxLines) {
+    while (visible.at(-1) && context.measureText(`${visible.at(-1)}…`).width > maxWidth) {
+      visible[visible.length - 1] = visible.at(-1).slice(0, -1);
+    }
+    visible[visible.length - 1] = `${visible.at(-1)}…`;
+  }
+  visible.forEach((value, index) => context.fillText(value, x, y + index * lineHeight));
+  return visible.length;
+}
+
+function drawGrowthPlant(context, centerX, baseY, scale, seed) {
+  const sway = ((seed % 17) - 8) * scale;
+  const stemTop = baseY - 300 * scale;
+  context.save();
+  context.strokeStyle = "#2d6a58";
+  context.lineWidth = 12 * scale;
+  context.lineCap = "round";
+  context.beginPath();
+  context.moveTo(centerX, baseY);
+  context.bezierCurveTo(centerX - 12 * scale, baseY - 110 * scale, centerX + sway, baseY - 210 * scale, centerX + sway, stemTop);
+  context.stroke();
+
+  const leaves = [
+    { y: baseY - 82 * scale, side: -1, size: 63 },
+    { y: baseY - 145 * scale, side: 1, size: 72 },
+    { y: baseY - 215 * scale, side: -1, size: 58 },
+    { y: baseY - 267 * scale, side: 1, size: 50 }
+  ];
+  leaves.forEach((leaf, index) => {
+    const size = leaf.size * scale;
+    const x = centerX + sway * ((baseY - leaf.y) / (baseY - stemTop));
+    context.fillStyle = index % 2 ? "#77a947" : "#397d69";
+    context.beginPath();
+    context.moveTo(x, leaf.y);
+    context.bezierCurveTo(x + leaf.side * size * .35, leaf.y - size * .7, x + leaf.side * size, leaf.y - size * .55, x + leaf.side * size, leaf.y - size * .08);
+    context.bezierCurveTo(x + leaf.side * size * .72, leaf.y + size * .2, x + leaf.side * size * .25, leaf.y + size * .15, x, leaf.y);
+    context.fill();
+  });
+
+  const bloomX = centerX + sway;
+  const petalCount = 6 + (seed % 3);
+  for (let index = 0; index < petalCount; index += 1) {
+    const angle = (Math.PI * 2 * index) / petalCount;
+    context.save();
+    context.translate(bloomX, stemTop);
+    context.rotate(angle);
+    context.fillStyle = index % 2 ? "#d9efab" : "#c4df8b";
+    context.beginPath();
+    context.ellipse(0, -38 * scale, 20 * scale, 42 * scale, 0, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+  }
+  context.fillStyle = "#f0bd65";
+  context.beginPath();
+  context.arc(bloomX, stemTop, 23 * scale, 0, Math.PI * 2);
+  context.fill();
+  context.restore();
+}
+
+function renderGrowthCard() {
+  const habit = findHabit(growthHabitId);
+  if (!habit) return;
+  const canvas = $("#growthCanvas");
+  const context = canvas.getContext("2d");
+  const story = document.querySelector('[name="growthFormat"]:checked')?.value === "story";
+  const width = 1080;
+  const height = story ? 1920 : 1350;
+  canvas.width = width;
+  canvas.height = height;
+  const { achieved, length, completedAt } = journeyProgress(habit);
+  const start = parseStart(habit);
+  const showName = $("#showGrowthName").checked;
+  const editedName = $("#growthCardName").value.trim();
+  const cardName = showName ? editedName || habit.name : "A practice I tended";
+  const compactDate = (date) => date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  const seed = hashText(`${habit.id}:${habit.name}`);
+  const side = story ? 88 : 82;
+
+  context.fillStyle = "#f4f5ef";
+  context.fillRect(0, 0, width, height);
+  context.fillStyle = "#173f35";
+  context.fillRect(0, 0, width, story ? 250 : 210);
+  context.fillStyle = "rgba(217,239,171,.10)";
+  context.beginPath();
+  context.arc(width - 70, 70, story ? 330 : 250, 0, Math.PI * 2);
+  context.fill();
+
+  context.textBaseline = "alphabetic";
+  context.fillStyle = "#ffffff";
+  context.font = '700 48px "Inter Variable", Inter, sans-serif';
+  context.fillText("♧  Tend", side, story ? 145 : 130);
+  context.fillStyle = "#b9d2c9";
+  context.font = '600 25px "Inter Variable", Inter, sans-serif';
+  context.fillText("A record of showing up", side, story ? 192 : 170);
+
+  const plantCenter = story ? width / 2 : 790;
+  const plantBase = story ? 825 : 680;
+  const plantScale = story ? 1.55 : 1.18;
+  context.fillStyle = "#e2eee8";
+  context.beginPath();
+  context.arc(plantCenter, plantBase - 145 * plantScale, story ? 265 : 215, 0, Math.PI * 2);
+  context.fill();
+  drawGrowthPlant(context, plantCenter, plantBase, plantScale, seed);
+
+  const copyTop = story ? 980 : 315;
+  const copyWidth = story ? width - side * 2 : 470;
+  context.fillStyle = "#397d69";
+  context.font = '700 25px "Inter Variable", Inter, sans-serif';
+  context.letterSpacing = "3px";
+  context.fillText("PRACTICE COMPLETE", side, copyTop);
+  context.letterSpacing = "0px";
+  context.fillStyle = "#173f35";
+  context.font = `700 ${story ? 76 : 66}px "Inter Variable", Inter, sans-serif`;
+  const titleLines = drawWrappedText(context, "Something took root.", side, copyTop + 98, copyWidth, story ? 84 : 76, 2);
+
+  context.fillStyle = "#24332e";
+  context.font = `650 ${story ? 46 : 38}px "Inter Variable", Inter, sans-serif`;
+  const titleY = copyTop + 98 + titleLines * (story ? 84 : 76) + 36;
+  const nameLines = drawWrappedText(context, cardName, side, titleY, copyWidth, story ? 57 : 49, 2);
+
+  const statsY = titleY + nameLines * (story ? 57 : 49) + (story ? 70 : 58);
+  const statsWidth = story ? width - side * 2 : 470;
+  roundedRect(context, side, statsY, statsWidth, story ? 188 : 164, 28);
+  context.fillStyle = "#ffffff";
+  context.fill();
+  context.fillStyle = "#2d6a58";
+  context.font = `750 ${story ? 72 : 62}px "Inter Variable", Inter, sans-serif`;
+  context.fillText(String(achieved), side + 34, statsY + (story ? 85 : 76));
+  context.fillStyle = "#697873";
+  context.font = `600 ${story ? 27 : 23}px "Inter Variable", Inter, sans-serif`;
+  context.fillText(`days tended · ${length}-day practice`, side + 34, statsY + (story ? 135 : 120));
+
+  const footerY = story ? height - 180 : height - 118;
+  context.fillStyle = "#697873";
+  context.font = `550 ${story ? 25 : 22}px "Inter Variable", Inter, sans-serif`;
+  context.fillText(`${compactDate(start)} — ${compactDate(completedAt)}`, side, footerY);
+  context.textAlign = "right";
+  context.fillStyle = "#2d6a58";
+  context.font = `700 ${story ? 25 : 22}px "Inter Variable", Inter, sans-serif`;
+  context.fillText("theonurag.github.io/tend", width - side, footerY);
+  context.textAlign = "left";
+}
+
+async function openGrowthCard() {
+  const habit = findHabit(activeHabitId);
+  if (!habit || !journeyProgress(habit).isComplete) return;
+  growthHabitId = habit.id;
+  $("#growthCardName").value = habit.name;
+  $("#showGrowthName").checked = true;
+  document.querySelector('[name="growthFormat"][value="feed"]').checked = true;
+  $("#growthCaption").value = defaultGrowthCardCaption(habit);
+  $("#detailDialog").close();
+  await document.fonts?.ready;
+  renderGrowthCard();
+  $("#growthDialog").showModal();
+}
+
+function growthCardBlob() {
+  return new Promise((resolve, reject) => {
+    $("#growthCanvas").toBlob((blob) => blob ? resolve(blob) : reject(new Error("The growth card could not be rendered.")), "image/png");
+  });
+}
+
+function growthCardFilename(habit) {
+  const safeName = habit.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 42) || "practice";
+  const format = document.querySelector('[name="growthFormat"]:checked')?.value || "feed";
+  return `tend-${safeName}-${format}.png`;
+}
+
+async function downloadGrowthCard() {
+  const habit = findHabit(growthHabitId);
+  if (!habit) return;
+  try {
+    const blob = await growthCardBlob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = growthCardFilename(habit);
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast("Growth card downloaded.");
+  } catch (error) {
+    reportError("Downloading growth card failed", error);
+  }
+}
+
+async function shareGrowthCard() {
+  const habit = findHabit(growthHabitId);
+  if (!habit) return;
+  try {
+    const blob = await growthCardBlob();
+    const file = new File([blob], growthCardFilename(habit), { type: "image/png" });
+    const shareData = { title: "My Tend growth card", text: growthCardCaption(habit), files: [file] };
+    if (!navigator.share || !navigator.canShare?.({ files: [file] })) {
+      await downloadGrowthCard();
+      showToast("Sharing isn’t available here, so the card was downloaded.", "neutral");
+      return;
+    }
+    await navigator.share(shareData);
+    showToast("Growth card shared.");
+  } catch (error) {
+    if (error?.name !== "AbortError") reportError("Sharing growth card failed", error);
+  }
+}
+
+async function copyGrowthCaption() {
+  const habit = findHabit(growthHabitId);
+  if (!habit) return;
+  try {
+    await navigator.clipboard.writeText(growthCardCaption(habit));
+    showToast("Caption copied.");
+  } catch (error) {
+    reportError("Copying caption failed", error);
+  }
 }
 
 async function deleteActiveHabit() {
@@ -564,6 +832,7 @@ document.addEventListener("click", (event) => {
   if (detailButton) return openDetail(detailButton.dataset.detail);
   if (event.target.closest("[data-close-detail]")) return $("#detailDialog").close();
   if (event.target.closest("[data-close-habit]")) return $("#habitDialog").close();
+  if (event.target.closest("[data-close-growth]")) return $("#growthDialog").close();
   if (event.target.closest("[data-open-auth]")) return $("#authDialog").showModal();
 });
 
@@ -605,6 +874,14 @@ $("#authButton").addEventListener("click", (event) => {
 
 $("#deleteHabit").addEventListener("click", deleteActiveHabit);
 $("#editHabit").addEventListener("click", openEditHabit);
+$("#extendPractice").addEventListener("click", openEditHabit);
+$("#openGrowthCard").addEventListener("click", openGrowthCard);
+$("#shareGrowthCard").addEventListener("click", shareGrowthCard);
+$("#downloadGrowthCard").addEventListener("click", downloadGrowthCard);
+$("#copyGrowthCaption").addEventListener("click", copyGrowthCaption);
+$("#growthCardName").addEventListener("input", updateGrowthCardCustomization);
+$("#showGrowthName").addEventListener("change", updateGrowthCardCustomization);
+document.querySelectorAll('[name="growthFormat"]').forEach((input) => input.addEventListener("change", renderGrowthCard));
 $("#resetData").addEventListener("click", resetData);
 
 render();
