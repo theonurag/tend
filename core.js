@@ -57,13 +57,15 @@ export function journeyProgress(habit = {}, today = new Date()) {
   const parsedStart = new Date(habit.createdAt);
   const start = Number.isNaN(parsedStart.valueOf()) ? new Date(today) : parsedStart;
   const completed = successfulDates(habit.events);
+  const finalDate = dateKey(journeyDate(start, length));
+  const dayOffset = calendarDayOffset(start, today);
   const achieved = Array.from({ length }, (_, index) => dateKey(journeyDate(start, index + 1)))
     .filter((key) => completed.has(key)).length;
   return {
     achieved,
     length,
     rate: Math.round((achieved / length) * 100),
-    isComplete: calendarDayOffset(start, today) >= length,
+    isComplete: dayOffset >= length || (dayOffset === length - 1 && completed.has(finalDate)),
     completedAt: journeyDate(start, length)
   };
 }

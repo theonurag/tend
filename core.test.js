@@ -78,7 +78,21 @@ test("journey progress summarizes only events inside the practice window", () =>
     isComplete: true,
     completedAt: localDate(2026, 7, 22)
   });
+  assert.equal(journeyProgress(habit, localDate(2026, 7, 22)).isComplete, true);
+});
+
+test("checking the final day completes a practice immediately", () => {
+  const start = localDate(2026, 7, 28);
+  const oneDayPractice = { createdAt: start, durationDays: 1, events: [] };
+  assert.equal(journeyProgress(oneDayPractice, start).isComplete, false);
+  oneDayPractice.events.push({ date: "2026-07-28", outcome: "done" });
+  assert.equal(journeyProgress(oneDayPractice, start).isComplete, true);
+});
+
+test("an unchecked practice completes after its final calendar day", () => {
+  const habit = { createdAt: localDate(2026, 7, 20), durationDays: 3, events: [] };
   assert.equal(journeyProgress(habit, localDate(2026, 7, 22)).isComplete, false);
+  assert.equal(journeyProgress(habit, localDate(2026, 7, 23)).isComplete, true);
 });
 
 test("practice summary counts healthy opportunities without streak logic", () => {

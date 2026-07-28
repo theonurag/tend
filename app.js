@@ -164,8 +164,8 @@ function habitRow(habit, maximumLength) {
   const start = parseStart(habit);
   const length = habit.durationDays;
   const currentDay = journeyDay(start, new Date(), length);
+  const progress = journeyProgress(habit);
   const completed = successfulDates(habit.events);
-  const completedInJourney = Array.from({ length }, (_, index) => dateKey(journeyDate(start, index + 1))).filter((key) => completed.has(key)).length;
   const today = dateKey();
   const cells = Array.from({ length }, (_, index) => {
     const day = index + 1;
@@ -186,16 +186,17 @@ function habitRow(habit, maximumLength) {
     const weekStart = day === 1 || (day - 1) % 7 === 0;
     return `<td class="day-cell outside-journey ${weekStart ? "week-start" : ""}" aria-hidden="true"></td>`;
   }).join("");
-  const status = currentDay > length ? "Complete" : `Day ${Math.max(1, currentDay)} of ${length}`;
+  const status = progress.isComplete ? "Complete" : `Day ${Math.max(1, currentDay)} of ${length}`;
   return `<tr data-id="${escapeHTML(habit.id)}">
     <th scope="row" class="habit-name-cell"><button type="button" data-detail="${escapeHTML(habit.id)}"><strong>${escapeHTML(habit.name)}</strong><span>${status}</span></button></th>
-    <td class="score-cell"><strong>${completedInJourney}</strong><span>/${length}</span></td>${cells}${unusedCells}
+    <td class="score-cell"><strong>${progress.achieved}</strong><span>/${length}</span></td>${cells}${unusedCells}
   </tr>`;
 }
 
 function practiceGroup({ durationDays, habits }) {
   const practiceLabel = `${habits.length} ${habits.length === 1 ? "practice" : "practices"}`;
-  const activeCount = habits.filter((habit) => isJourneyActive(parseStart(habit), new Date(), durationDays)).length;
+  const today = new Date();
+  const activeCount = habits.filter((habit) => isJourneyActive(parseStart(habit), today, durationDays) && !journeyProgress(habit, today).isComplete).length;
   const activeLabel = activeCount ? `${activeCount} active` : "complete";
   return `<section class="practice-group" aria-label="${durationDays}-day practices">
     <div class="practice-group-row"><strong>${durationDays}-day practices</strong><span>${practiceLabel} · ${activeLabel}</span></div>
@@ -215,7 +216,7 @@ function render() {
 
   const today = new Date();
   const todayKey = dateKey(today);
-  const activeHabits = state.habits.filter((habit) => isJourneyActive(parseStart(habit), today, habit.durationDays));
+  const activeHabits = state.habits.filter((habit) => isJourneyActive(parseStart(habit), today, habit.durationDays) && !journeyProgress(habit, today).isComplete);
   const achievedToday = activeHabits.filter((habit) => successfulDates(habit.events).has(todayKey)).length;
   $("#todaySummary").textContent = activeHabits.length
     ? `${achievedToday} of ${activeHabits.length} active ${activeHabits.length === 1 ? "practice" : "practices"} achieved today.`
@@ -399,6 +400,7 @@ async function toggleDay(id, day, button) {
   if (day < 1 || day > currentDay || day > habit.durationDays) return;
   const key = dateKey(journeyDate(start, day));
   const existing = habit.events.find((event) => event?.date === key);
+  const completedFinalDay = !existing && day === habit.durationDays;
   button.disabled = true;
 
   if (LOCAL_DEV) {
@@ -419,6 +421,7 @@ async function toggleDay(id, day, button) {
     saveLocalState();
     setSyncStatus("Saved locally");
     render();
+    if (completedFinalDay) requestAnimationFrame(() => openDetail(habit.id));
     return;
   }
 
@@ -448,6 +451,7 @@ async function toggleDay(id, day, button) {
   }
   setSyncStatus("Synced securely");
   render();
+  if (completedFinalDay) requestAnimationFrame(() => openDetail(habit.id));
 }
 
 function openDetail(id) {
@@ -461,7 +465,7 @@ function openDetail(id) {
   $("#detailTitle").textContent = habit.name;
   $("#detailCount").textContent = progress.achieved;
   $("#detailEyebrow").textContent = `${length}-day practice`;
-  $("#detailDay").textContent = currentDay > length ? `${length}-day practice complete` : `Day ${Math.max(1, currentDay)} of ${length}`;
+  $("#detailDay").textContent = progress.isComplete ? `${length}-day practice complete` : `Day ${Math.max(1, currentDay)} of ${length}`;
   $("#detailProgress").style.width = `${progress.rate}%`;
   $("#completionSummary").hidden = !progress.isComplete;
   $("#completionMessage").textContent = progress.isComplete
