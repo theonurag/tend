@@ -23,9 +23,21 @@ Open <http://127.0.0.1:3000/>. Never put a `service_role`, `sb_secret_*`, databa
 - **Quiet missed days:** unmarked days stay visually neutral and never erase previous progress.
 - **Private accounts:** passwordless Supabase Auth identifies each user. PostgreSQL Row-Level Security limits every habit and event query to its owner.
 
+## Architecture
+
+- `src/domain/` contains pure journey and calendar rules.
+- `src/application/` coordinates habit use cases through a repository contract.
+- `src/data/` provides interchangeable local-development and Supabase adapters.
+- `src/features/` owns tracker, editor, authentication, and growth-card UI.
+- `styles/` contains shared and feature-specific styles.
+- `supabase/` contains append-only migrations and database policy tests.
+
+See `AGENTS.md` for task routing and the smallest verification command for each
+area.
+
 ## Data and privacy
 
-Supabase PostgreSQL is Tend's source of truth. Habit data is held in memory while the page is open and is not copied to browser `localStorage`. The Supabase client stores the signed-in session locally so it can refresh securely; signing out removes the local session. Tend has no analytics or advertising trackers.
+Supabase PostgreSQL is Tend's production source of truth. Production habit data is held in memory while the page is open and is not copied to browser `localStorage`. Local development deliberately uses a `localStorage` repository so UI work does not require a production account. The Supabase client stores the signed-in session locally so it can refresh securely; signing out removes the local session. Tend has no analytics or advertising trackers.
 
 No legacy browser data is imported. A user begins with a fresh server-side account.
 

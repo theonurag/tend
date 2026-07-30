@@ -1,0 +1,14 @@
+node_modules/
+dist/
+coverage/
+package-lock.json
+
+# Generated Supabase CLI defaults are rarely relevant to product work.
+supabase/config.toml
+
+# Local credentials and editor state.
+.env
+.env.*
+!.env.example
+.idea/
+.vscode/

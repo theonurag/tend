@@ -1,5 +1,8 @@
 import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
+
+const rootDirectory = fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig({
   base: "/tend/",
@@ -16,8 +19,8 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        main: resolve(import.meta.dirname, "index.html"),
-        guide: resolve(import.meta.dirname, "guide.html")
+        main: resolve(rootDirectory, "index.html"),
+        guide: resolve(rootDirectory, "guide.html")
       }
     }
   }

@@ -1,5 +1,9 @@
 # Research synthesis
 
+This document records product rationale and historical comparisons. It is not
+an implementation specification; `README.md` and `src/` describe shipped
+behavior.
+
 ## What the evidence supports
 
 | Finding | Product implication | Confidence / caveat |
@@ -29,7 +33,9 @@
 - No leaderboards, social comparison, punishment, health loss, or loss aversion.
 - No variable-ratio loot rewards, artificial scarcity, or monetized currencies.
 - No claim that gamification or a fixed streak causes lasting behavior change.
-- No mandatory account; v1 stores data locally.
+- Production uses passwordless accounts so private practice data can be
+  synchronized through Supabase. Local development uses browser storage
+  through a repository adapter.
 
 ## Sources
 

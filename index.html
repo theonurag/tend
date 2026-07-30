@@ -10,7 +10,7 @@
     <script src="theme.js?v=2"></script>
     <title>Tend — daily practice</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23173f35'/%3E%3Cpath d='M32 48V26m0 9c-9 0-15-5-15-14 9 0 15 5 15 14Zm0-4c9 0 15-5 15-14-9 0-15 5-15 14Z' fill='none' stroke='%23d9efab' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
-    <link rel="stylesheet" href="styles.css?v=20" />
+    <link rel="stylesheet" href="styles.css?v=21" />
   </head>
   <body>
     <a class="skip-link" href="#habitTracker">Skip to habit tracker</a>
@@ -69,7 +69,7 @@
       <form id="habitForm">
         <div class="dialog-header"><div><p class="eyebrow" id="habitDialogEyebrow">Begin a practice</p><h2 id="habitDialogTitle">Add a practice</h2></div><button class="close-button" type="button" data-close-habit aria-label="Close">×</button></div>
         <p class="dialog-intro">Define the practice once. The tracker will only ask whether you showed up.</p>
-        <label class="field"><span>Start with a suggestion</span><select name="habitPreset" id="habitPreset"><option value="">Choose a suggestion or write your own</option><optgroup label="Physical wellbeing"><option value="walk">Take a daily walk</option><option value="exercise">Move my body</option><option value="strength">Build strength</option><option value="stretch">Stretch daily</option><option value="water">Drink more water</option><option value="vegetables">Eat more vegetables</option><option value="sleep">Keep a sleep routine</option><option value="medication">Take prescribed medication</option><option value="floss">Floss my teeth</option><option value="sunlight">Get morning daylight</option></optgroup><optgroup label="Mental wellbeing"><option value="meditate">Meditate</option><option value="breathe">Pause and breathe</option><option value="journal">Write in a journal</option><option value="gratitude">Practice gratitude</option><option value="phone">Start the day without my phone</option></optgroup><optgroup label="Growth and focus"><option value="read">Read every day</option><option value="learn">Learn something new</option><option value="focus">Do focused work</option><option value="plan">Plan tomorrow</option><option value="review">Review my day</option></optgroup><optgroup label="Life and connection"><option value="connect">Connect with someone</option><option value="tidy">Reset my space</option><option value="money">Check my spending</option><option value="outdoors">Spend time outdoors</option></optgroup></select></label>
+        <label class="field"><span>Start with a suggestion</span><select name="habitPreset" id="habitPreset"><option value="">Choose a suggestion or write your own</option></select></label>
         <label class="field"><span>Practice name</span><input name="name" required maxlength="70" placeholder="e.g. Reading" /></label>
         <label class="field"><span>Why does this matter?</span><textarea name="why" maxlength="180" rows="2" placeholder="e.g. I want to learn and unwind without scrolling"></textarea></label>
         <label class="field"><span>When will you do it?</span><input name="cue" required maxlength="120" placeholder="e.g. When I get into bed" /></label>
@@ -120,6 +120,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="app.js?v=22"></script>
+    <script type="module" src="src/app.js?v=23"></script>
   </body>
 </html>

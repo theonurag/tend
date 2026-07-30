@@ -1,0 +1,31 @@
+.growth-dialog { width: min(980px, calc(100% - 28px)); }
+.growth-dialog-shell { padding: 26px; }
+.growth-layout { display: grid; grid-template-columns: minmax(280px, 1.06fr) minmax(260px, .94fr); gap: 28px; align-items: start; }
+.growth-preview { display: grid; place-items: center; min-height: 360px; padding: 18px; background: #e6e9e2; border: 1px solid var(--line); border-radius: 12px; }
+.growth-preview canvas { display: block; width: 100%; max-height: min(62vh, 660px); object-fit: contain; box-shadow: 0 18px 45px rgba(16,47,40,.17); }
+.growth-controls .field { margin-top: 0; }
+.check-field { display: flex; align-items: center; gap: 9px; margin: 14px 0 20px; color: var(--ink); font-size: 12px; font-weight: 700; }
+.check-field input { width: 17px; height: 17px; accent-color: var(--forest-700); }
+.format-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 17px; padding: 0; border: 0; }
+.format-options legend { grid-column: 1 / -1; margin-bottom: 8px; color: var(--ink); font-size: var(--font-sm); font-weight: 700; }
+.format-options label { position: relative; cursor: pointer; }
+.format-options input { position: absolute; opacity: 0; pointer-events: none; }
+.format-options label > span { display: flex; justify-content: space-between; align-items: center; min-height: 46px; padding: 10px 12px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; font-size: 12px; font-weight: 700; }
+.format-options small { color: var(--muted); font-size: 10px; font-weight: 500; }
+.format-options input:checked + span { color: var(--forest-700); background: var(--forest-100); border-color: var(--forest-600); box-shadow: 0 0 0 1px var(--forest-600); }
+.format-options input:focus-visible + span { outline: 3px solid rgba(57, 125, 105, .28); outline-offset: 2px; }
+.growth-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 22px; }
+.growth-actions .text-button { grid-column: 1 / -1; justify-self: center; padding: 6px; }
+
+html[data-theme="dark"] .growth-preview { background: #121a17; }
+
+@media (max-width: 760px) {
+  .growth-dialog-shell { padding: 21px; }
+  .growth-layout { grid-template-columns: 1fr; gap: 22px; }
+  .growth-preview canvas { max-height: 52vh; }
+}
+
+@media (max-width: 480px) {
+  .growth-actions { grid-template-columns: 1fr; }
+  .growth-actions .text-button { grid-column: 1; }
+}

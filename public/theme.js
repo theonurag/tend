@@ -42,7 +42,7 @@
   applyTheme(readTheme());
   document.addEventListener("DOMContentLoaded", syncButton);
   document.addEventListener("click", (event) => {
-    if (!event.target.closest("#themeToggle")) return;
+    if (!(event.target instanceof Element) || !event.target.closest("#themeToggle")) return;
     applyTheme(root.dataset.theme === "dark" ? "light" : "dark", true);
   });
 })();
