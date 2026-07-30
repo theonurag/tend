@@ -1,5 +1,8 @@
 export function dateKey(date = new Date()) {
-  return date.toLocaleDateString("en-CA");
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 export function journeyDate(start, day) {
@@ -25,6 +28,25 @@ export function journeyDay(start, today = new Date(), length = 90) {
 export function isJourneyActive(start, today = new Date(), length = 90) {
   const offset = calendarDayOffset(start, today);
   return offset >= 0 && offset < Number(length);
+}
+
+export function isWeekStart(date) {
+  return date.getDay() === 0;
+}
+
+export function habitTimeline(habits = [], fallback = new Date()) {
+  const windows = (Array.isArray(habits) ? habits : []).map((habit) => {
+    const parsed = new Date(habit?.createdAt);
+    const start = journeyDate(Number.isNaN(parsed.valueOf()) ? fallback : parsed, 1);
+    return {
+      start,
+      end: journeyDate(start, normalizeJourneyLength(habit?.durationDays))
+    };
+  });
+  if (!windows.length) return { start: journeyDate(fallback, 1), length: 0 };
+  const start = new Date(Math.min(...windows.map((window) => window.start.valueOf())));
+  const end = new Date(Math.max(...windows.map((window) => window.end.valueOf())));
+  return { start, length: calendarDayOffset(start, end) + 1 };
 }
 
 export function groupHabitsByDuration(habits = []) {

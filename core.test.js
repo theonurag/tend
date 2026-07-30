@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { calendarDayOffset, dateKey, gardenStage, groupHabitsByDuration, habitPhase, isJourneyActive, journeyDate, journeyDay, journeyProgress, latestAutomaticity, normalizeJourneyLength, practiceSummary, recoveryCount, successfulDates, totalGrowth } from "./core.js";
+import { calendarDayOffset, dateKey, gardenStage, groupHabitsByDuration, habitPhase, habitTimeline, isJourneyActive, isWeekStart, journeyDate, journeyDay, journeyProgress, latestAutomaticity, normalizeJourneyLength, practiceSummary, recoveryCount, successfulDates, totalGrowth } from "./core.js";
 
 const localDate = (year, month, day) => new Date(year, month - 1, day, 12);
 const event = (outcome, reflection = "") => ({ outcome, reflection });
@@ -31,6 +31,21 @@ test("journeys are active only from their start through their final day", () => 
   assert.equal(isJourneyActive(start, localDate(2026, 7, 20), 7), true);
   assert.equal(isJourneyActive(start, localDate(2026, 7, 26), 7), true);
   assert.equal(isJourneyActive(start, localDate(2026, 7, 27), 7), false);
+});
+
+test("habit timelines preserve blank calendar slots before later starts", () => {
+  const timeline = habitTimeline([
+    { createdAt: localDate(2026, 7, 29), durationDays: 7 },
+    { createdAt: localDate(2026, 7, 30), durationDays: 7 }
+  ]);
+  assert.equal(dateKey(timeline.start), "2026-07-29");
+  assert.equal(timeline.length, 8);
+  assert.equal(calendarDayOffset(timeline.start, localDate(2026, 7, 30)), 1);
+});
+
+test("calendar weeks are divided before Sunday", () => {
+  assert.equal(isWeekStart(localDate(2026, 8, 1)), false);
+  assert.equal(isWeekStart(localDate(2026, 8, 2)), true);
 });
 
 test("habits group by normalized practice length in ascending order", () => {

@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { dateKey, groupHabitsByDuration, isJourneyActive, journeyDate, journeyDay, journeyProgress, normalizeJourneyLength, successfulDates } from "./core.js";
+import { calendarDayOffset, dateKey, groupHabitsByDuration, habitTimeline, isJourneyActive, isWeekStart, journeyDate, journeyDay, journeyProgress, normalizeJourneyLength, successfulDates } from "./core.js";
 
 const DEFAULT_INITIAL_DAYS = 7;
 const LOCAL_DEV = import.meta.env.DEV;
@@ -140,33 +140,36 @@ function setSyncStatus(message, busy = false) {
   status.dataset.busy = String(busy);
 }
 
-function headingDateRange(habits, day) {
-  const dates = habits
-    .filter((habit) => habit.durationDays >= day)
-    .map((habit) => journeyDate(parseStart(habit), day))
-    .sort((first, second) => first - second);
-  const first = dates[0];
-  const last = dates.at(-1);
-  const compact = (date) => date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-  return dateKey(first) === dateKey(last) ? compact(first) : `${compact(first)}–${compact(last)}`;
-}
-
-function dayHeadings(length, habits) {
+function dayHeadings(length, timelineStart) {
+  const today = dateKey();
   return Array.from({ length }, (_, index) => {
-    const day = index + 1;
-    const weekStart = day === 1 || (day - 1) % 7 === 0;
-    const dateRange = headingDateRange(habits, day);
-    return `<th scope="col" class="day-heading ${weekStart ? "week-start" : ""}" title="${escapeHTML(dateRange)}, day ${day}"><small>${escapeHTML(dateRange)}</small><span>Day ${day}</span></th>`;
+    const date = journeyDate(timelineStart, index + 1);
+    const key = dateKey(date);
+    const weekStart = isWeekStart(date);
+    const weekday = date.toLocaleDateString(undefined, { weekday: "short" });
+    const compact = date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    const full = date.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
+    return `<th scope="col" class="day-heading ${weekStart ? "week-start" : ""} ${key === today ? "is-today" : ""}" title="${escapeHTML(full)}"><small>${escapeHTML(weekday)}</small><span>${escapeHTML(compact)}</span></th>`;
   }).join("");
 }
 
-function habitRow(habit, maximumLength) {
+function outsideJourneyCells(length, firstColumn, timelineStart) {
+  return Array.from({ length }, (_, index) => {
+    const column = firstColumn + index;
+    const weekStart = isWeekStart(journeyDate(timelineStart, column));
+    return `<td class="day-cell outside-journey ${weekStart ? "week-start" : ""}" aria-hidden="true"></td>`;
+  }).join("");
+}
+
+function habitRow(habit, timelineStart, timelineLength) {
   const start = parseStart(habit);
   const length = habit.durationDays;
+  const leadingLength = Math.max(0, calendarDayOffset(timelineStart, start));
   const currentDay = journeyDay(start, new Date(), length);
   const progress = journeyProgress(habit);
   const completed = successfulDates(habit.events);
   const today = dateKey();
+  const leadingCells = outsideJourneyCells(leadingLength, 1, timelineStart);
   const cells = Array.from({ length }, (_, index) => {
     const day = index + 1;
     const date = journeyDate(start, day);
@@ -174,36 +177,34 @@ function habitRow(habit, maximumLength) {
     const done = completed.has(key);
     const future = key > today;
     const isToday = key === today;
-    const weekStart = day === 1 || (day - 1) % 7 === 0;
+    const weekStart = isWeekStart(date);
     const formattedDate = date.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
     const label = `${habit.name}, ${formattedDate}, day ${day} of ${length}${done ? ", achieved" : future ? ", not available yet" : ", not achieved"}`;
     return `<td class="day-cell in-journey ${weekStart ? "week-start" : ""} ${isToday ? "is-today" : ""}">
       <button type="button" data-toggle-day="${day}" data-id="${escapeHTML(habit.id)}" title="${escapeHTML(formattedDate)}" aria-label="${escapeHTML(label)}" aria-pressed="${done}" ${future ? "disabled" : ""}>${done ? "<span aria-hidden=\"true\">✓</span>" : ""}</button>
     </td>`;
   }).join("");
-  const unusedCells = Array.from({ length: maximumLength - length }, (_, index) => {
-    const day = length + index + 1;
-    const weekStart = day === 1 || (day - 1) % 7 === 0;
-    return `<td class="day-cell outside-journey ${weekStart ? "week-start" : ""}" aria-hidden="true"></td>`;
-  }).join("");
+  const trailingLength = Math.max(0, timelineLength - leadingLength - length);
+  const trailingCells = outsideJourneyCells(trailingLength, leadingLength + length + 1, timelineStart);
   const status = progress.isComplete ? "Complete" : `Day ${Math.max(1, currentDay)} of ${length}`;
   return `<tr data-id="${escapeHTML(habit.id)}">
     <th scope="row" class="habit-name-cell"><button type="button" data-detail="${escapeHTML(habit.id)}"><strong>${escapeHTML(habit.name)}</strong><span>${status}</span></button></th>
-    <td class="score-cell"><strong>${progress.achieved}</strong><span>/${length}</span></td>${cells}${unusedCells}
+    <td class="score-cell"><strong>${progress.achieved}</strong><span>/${length}</span></td>${leadingCells}${cells}${trailingCells}
   </tr>`;
 }
 
 function practiceGroup({ durationDays, habits }) {
   const practiceLabel = `${habits.length} ${habits.length === 1 ? "practice" : "practices"}`;
   const today = new Date();
+  const timeline = habitTimeline(habits, today);
   const activeCount = habits.filter((habit) => isJourneyActive(parseStart(habit), today, durationDays) && !journeyProgress(habit, today).isComplete).length;
   const activeLabel = activeCount ? `${activeCount} active` : "complete";
   return `<section class="practice-group" aria-label="${durationDays}-day practices">
     <div class="practice-group-row"><strong>${durationDays}-day practices</strong><span>${practiceLabel} · ${activeLabel}</span></div>
     <div class="group-table-scroll" tabindex="0" aria-label="Scroll ${durationDays}-day practices horizontally">
       <table class="habit-matrix">
-        <thead><tr><th scope="col" class="habit-heading"><span>Practice</span></th><th scope="col" class="score-heading"><span>Done</span></th>${dayHeadings(durationDays, habits)}</tr></thead>
-        <tbody>${habits.map((habit) => habitRow(habit, durationDays)).join("")}</tbody>
+        <thead><tr><th scope="col" class="habit-heading"><span>Practice</span></th><th scope="col" class="score-heading"><span>Done</span></th>${dayHeadings(timeline.length, timeline.start)}</tr></thead>
+        <tbody>${habits.map((habit) => habitRow(habit, timeline.start, timeline.length)).join("")}</tbody>
       </table>
     </div>
   </section>`;
