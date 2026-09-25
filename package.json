@@ -16,7 +16,7 @@
     "verify": "npm run check && npm test && npm run build"
   },
   "devDependencies": {
-    "@types/node": "^26.1.2",
+    "@types/node": "^26.6.2",
     "supabase": "^2.109.1",
     "typescript": "^7.0.2",
     "vite": "^8.1.5"
